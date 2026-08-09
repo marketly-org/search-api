@@ -1,5 +1,6 @@
 //! HTTP handlers for the search API.
 use axum::extract::{Query, State};
+use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 use std::sync::Arc;
