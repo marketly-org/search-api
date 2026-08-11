@@ -16,7 +16,7 @@ pub struct SearchQuery {
 
 /// GET /search?q=... — ranked product search (BUG: panics on missing q).
 pub async fn search(State(index): State<Arc<SearchIndex>>, Query(params): Query<SearchQuery>) -> Result<Json<SearchResponse>, AppError> {
-    let query: String = params.q.unwrap(); // BUG: panics when q is None
+    let query = params.q.ok_or_else(|| AppError::BadRequest("missing q parameter".into()))?;
     let limit = params.limit.unwrap_or(20);
     let hits = index.search(&query);
     let total = hits.len();
