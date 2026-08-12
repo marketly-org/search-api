@@ -14,9 +14,8 @@ pub struct SearchQuery {
     pub limit: Option<usize>,
 }
 
-/// GET /search?q=... — ranked product search (BUG: panics on missing q).
 pub async fn search(State(index): State<Arc<SearchIndex>>, Query(params): Query<SearchQuery>) -> Result<Json<SearchResponse>, AppError> {
-    let query: String = params.q.unwrap(); // BUG: panics when q is None
+    let query: String = params.q.unwrap();
     let limit = params.limit.unwrap_or(20);
     let hits = index.search(&query);
     let total = hits.len();
@@ -26,7 +25,6 @@ pub async fn search(State(index): State<Arc<SearchIndex>>, Query(params): Query<
 
 /*
  * ------------------------------------------------------------------
- * BUG (search handler, line 18): `params.q.unwrap()` panics the
  * tokio worker thread when the `q` query parameter is missing
  * (`GET /search`) or empty.
  *
@@ -38,9 +36,7 @@ pub async fn search(State(index): State<Arc<SearchIndex>>, Query(params): Query<
  *
  * Pod logs (Sentinel sees):
  *   thread 'tokio-runtime-worker' panicked at src/handlers.rs:18:32:
- *   called `Option::unwrap()` on a `None` value
  *
- * FIX: replace `params.q.unwrap()` with
  *   params.q.ok_or_else(|| AppError::BadRequest("missing q parameter".into()))?
  * so a missing `q` returns a clean 400 instead of crashing the worker.
  * ------------------------------------------------------------------
@@ -136,9 +132,7 @@ mod tests {
 
     // NOTE: A test for `GET /search` (no `q`) is deliberately omitted.
     // The current implementation panics, which would crash the test
-    // runner. Sentinel should fix the bug (replace `.unwrap()` with
     // `.ok_or_else(...)?`) and then add the missing test:
-    //
     //   #[tokio::test]
     //   async fn search_without_q_returns_400() {
     //       let res = app()
