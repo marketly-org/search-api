@@ -125,5 +125,4 @@ mod tests {
             .iter()
             .all(|h| h.name.to_lowercase().contains("keyboard")));
     }
-
 }
