@@ -26,24 +26,6 @@ pub async fn search(
     Ok(Json(SearchResponse { query, total, hits }))
 }
 
-/*
- * ------------------------------------------------------------------
- * tokio worker thread when the `q` query parameter is missing
- * (`GET /search`) or empty.
- *
- * main.rs does NOT install tower_http::catch_panic::CatchPanic, so
- * the panic tears down the connection. Under load this surfaces as
- * intermittent 502s from the ingress and, once every tokio worker
- * has panicked once, the server stops accepting new connections
- * entirely → k8s liveness probes fail → CrashLoopBackOff.
- *
- * Pod logs (Sentinel sees):
- *   thread 'tokio-runtime-worker' panicked at src/handlers.rs:18:32:
- *
- *   params.q.ok_or_else(|| AppError::BadRequest("missing q parameter".into()))?
- * so a missing `q` returns a clean 400 instead of crashing the worker.
- * ------------------------------------------------------------------
- */
 
 /// GET /health — liveness probe.
 pub async fn health() -> impl IntoResponse {
@@ -145,15 +127,4 @@ mod tests {
             .all(|h| h.name.to_lowercase().contains("keyboard")));
     }
 
-    // NOTE: A test for `GET /search` (no `q`) is deliberately omitted.
-    // The current implementation panics, which would crash the test
-    // `.ok_or_else(...)?`) and then add the missing test:
-    //   #[tokio::test]
-    //   async fn search_without_q_returns_400() {
-    //       let res = app()
-    //           .oneshot(Request::builder().uri("/search").body(Body::empty()).unwrap())
-    //           .await
-    //           .unwrap();
-    //       assert_eq!(res.status(), StatusCode::BAD_REQUEST);
-    //   }
 }
