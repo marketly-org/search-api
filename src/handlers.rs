@@ -26,7 +26,6 @@ pub async fn search(
     Ok(Json(SearchResponse { query, total, hits }))
 }
 
-
 /// GET /health — liveness probe.
 pub async fn health() -> impl IntoResponse {
     Json(HealthResponse {
