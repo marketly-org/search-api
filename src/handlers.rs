@@ -18,7 +18,14 @@ pub async fn search(
     State(index): State<Arc<SearchIndex>>,
     Query(params): Query<SearchQuery>,
 ) -> Result<Json<SearchResponse>, AppError> {
-    let query: String = params.q.unwrap();
+    let query = match params.q {
+        Some(q) => q,
+        None => {
+            return Err(AppError::BadRequest(
+                "Missing required query parameter 'q'".into(),
+            ));
+        }
+    };
     let limit = params.limit.unwrap_or(20);
     let hits = index.search(&query);
     let total = hits.len();
