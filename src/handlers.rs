@@ -1,5 +1,6 @@
 //! HTTP handlers for the search API.
 use crate::error::AppError;
+use serde_json::json;
 use crate::index::SearchIndex;
 use crate::models::{HealthResponse, SearchResponse};
 use axum::extract::{Query, State};
@@ -17,13 +18,21 @@ pub struct SearchQuery {
 pub async fn search(
     State(index): State<Arc<SearchIndex>>,
     Query(params): Query<SearchQuery>,
-) -> Result<Json<SearchResponse>, AppError> {
-    let query: String = params.q.unwrap();
+) -> impl IntoResponse {
+    let Some(query) = params.q else {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "missing query parameter" })),
+        );
+    };
     let limit = params.limit.unwrap_or(20);
     let hits = index.search(&query);
     let total = hits.len();
     let hits = hits.into_iter().take(limit).collect();
-    Ok(Json(SearchResponse { query, total, hits }))
+    (
+        axum::http::StatusCode::OK,
+        Json(SearchResponse { query, total, hits }),
+    )
 }
 
 /// GET /health — liveness probe.
