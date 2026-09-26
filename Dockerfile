@@ -9,7 +9,7 @@ WORKDIR /app
 # We need at least a dummy Cargo.toml + main.rs to do this.
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release || true
 
 # Now copy the real source and build the actual binary.
