@@ -17,18 +17,13 @@ pub struct SearchQuery {
 pub async fn search(
     State(index): State<Arc<SearchIndex>>,
     Query(params): Query<SearchQuery>,
-) -> impl IntoResponse {
-    let Some(query) = params.q else {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            axum::Json(serde_json::json!({ "error": "missing query parameter" })),
-        );
-    };
+) -> Result<Json<SearchResponse>, AppError> {
+    let query: String = params.q.unwrap();
     let limit = params.limit.unwrap_or(20);
     let hits = index.search(&query);
     let total = hits.len();
     let hits = hits.into_iter().take(limit).collect();
-    axum::Json(SearchResponse { query, total, hits })
+    Ok(Json(SearchResponse { query, total, hits }))
 }
 
 /// GET /health — liveness probe.
